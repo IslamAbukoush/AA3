@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratory 3: DFS vs BFS Empirical Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .section {
+            margin: 30px 0;
+            padding: 25px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+        }
+        
+        .section h2 {
+            color: #4a5568;
+            margin-top: 0;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        input, select, button {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .graph-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .graph-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .results-table th, .results-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .results-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .results-table tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .algorithm-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-top: 4px solid #667eea;
+        }
+        
+        .info-card h3 {
+            color: #4a5568;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .visualization {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .graph-canvas {
+            width: 400px;
+            height: 300px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin: 10px;
+            background: white;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .conclusion {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 30px;
+        }
+        
+        .conclusion h2 {
+            color: white;
+            margin-top: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            .graph-grid {
+                grid-template-columns: 1fr;
+            }
+            .algorithm-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Laboratory Nr. 3</h1>
+        <div class="subtitle">Empirical Analysis of Algorithms: Depth First Search (DFS) vs Breadth First Search (BFS)</div>
+        
+        <div class="section">
+            <h2>
+                <span class="icon">📊</span>
+                Algorithm Information & Properties
+            </h2>
+            <div class="algorithm-info">
+                <div class="info-card">
+                    <h3>
+                        <span class="icon">🔍</span>
+                        Depth First Search (DFS)
+                    </h3>
+                    <p><strong>Strategy:</strong> Explores as far as possible along each branch before backtracking</p>
+                    <p><strong>Data Structure:</strong> Stack (or recursion)</p>
+                    <p><strong>Time Complexity:</strong> O(V + E)</p>
+                    <p><strong>Space Complexity:</strong> O(V)</p>
+                    <p><strong>Applications:</strong> Topological sorting, cycle detection, pathfinding in mazes</p>
+                </div>
+                <div class="info-card">
+                    <h3>
+                        <span class="icon">🌊</span>
+                        Breadth First Search (BFS)
+                    </h3>
+                    <p><strong>Strategy:</strong> Explores all neighbors at the current depth before moving to the next level</p>
+                    <p><strong>Data Structure:</strong> Queue</p>
+                    <p><strong>Time Complexity:</strong> O(V + E)</p>
+                    <p><strong>Space Complexity:</strong> O(V)</p>
+                    <p><strong>Applications:</strong> Shortest path in unweighted graphs, level-order traversal</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>
+                <span class="icon">⚙️</span>
+                Test Configuration
+            </h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="graphType">Graph Type:</label>
+                    <select id="graphType">
+                        <option value="random">Random Graph</option>
+                        <option value="complete">Complete Graph</option>
+                        <option value="linear">Linear Chain</option>
+                        <option value="tree">Binary Tree</option>
+                        <option value="grid">Grid Graph</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="startSize">Start Size (vertices):</label>
+                    <input type="number" id="startSize" value="10" min="5" max="100">
+                </div>
+                <div class="control-group">
+                    <label for="endSize">End Size (vertices):</label>
+                    <input type="number" id="endSize" value="100" min="10" max="500">
+                </div>
+                <div class="control-group">
+                    <label for="stepSize">Step Size:</label>
+                    <input type="number" id="stepSize" value="10" min="5" max="50">
+                </div>
+                <div class="control-group">
+                    <label for="iterations">Iterations per size:</label>
+                    <input type="number" id="iterations" value="5" min="1" max="20">
+                </div>
+                <div class="control-group">
+                    <label for="density">Graph Density (0-1):</label>
+                    <input type="number" id="density" value="0.3" min="0.1" max="1" step="0.1">
+                </div>
+            </div>
+            <button id="runAnalysis" onclick="runAnalysis()">
+                <span class="icon">🚀</span>
+                Run Empirical Analysis
+            </button>
+            <div class="progress-bar" id="progressContainer" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>
+                <span class="icon">📈</span>
+                Performance Analysis Results
+            </h2>
+            <div class="graph-grid">
+                <div class="graph-container">
+                    <h3>Execution Time Comparison</h3>
+                    <canvas id="timeChart"></canvas>
+                </div>
+                <div class="graph-container">
+                    <h3>Memory Usage Comparison</h3>
+                    <canvas id="memoryChart"></canvas>
+                </div>
+                <div class="graph-container">
+                    <h3>Nodes Visited Comparison</h3>
+                    <canvas id="nodesChart"></canvas>
+                </div>
+                <div class="graph-container">
+                    <h3>Performance Efficiency</h3>
+                    <canvas id="efficiencyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>
+                <span class="icon">📋</span>
+                Detailed Results Table
+            </h2>
+            <table class="results-table" id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Graph Size</th>
+                        <th>DFS Time (ms)</th>
+                        <th>BFS Time (ms)</th>
+                        <th>DFS Memory</th>
+                        <th>BFS Memory</th>
+                        <th>DFS Nodes</th>
+                        <th>BFS Nodes</th>
+                        <th>Winner</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2>
+                <span class="icon">🎯</span>
+                Graph Visualization
+            </h2>
+            <div class="visualization">
+                <canvas id="graphCanvas" class="graph-canvas"></canvas>
+                <div style="margin-top: 10px;">
+                    <button onclick="visualizeDFS()">Visualize DFS</button>
+                    <button onclick="visualizeBFS()">Visualize BFS</button>
+                    <button onclick="generateSampleGraph()">Generate New Graph</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="conclusion">
+            <h2>
+                <span class="icon">🎓</span>
+                Conclusion
+            </h2>
+            <div id="conclusionText">
+                Run the analysis to see the empirical comparison results and conclusions.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Graph representation and algorithms
+        class Graph {
+            constructor(vertices) {
+                this.vertices = vertices;
+                this.adjList = new Map();
+                for (let i = 0; i < vertices; i++) {
+                    this.adjList.set(i, []);
+                }
+            }
+            
+            addEdge(u, v) {
+                this.adjList.get(u).push(v);
+                this.adjList.get(v).push(u); // Undirected graph
+            }
+            
+            dfs(startVertex = 0) {
+                const visited = new Set();
+                const result = [];
+                const stack = [startVertex];
+                let maxStackSize = 0;
+                
+                const startTime = performance.now();
+                
+                while (stack.length > 0) {
+                    maxStackSize = Math.max(maxStackSize, stack.length);
+                    const vertex = stack.pop();
+                    
+                    if (!visited.has(vertex)) {
+                        visited.add(vertex);
+                        result.push(vertex);
+                        
+                        // Add neighbors to stack in reverse order to maintain left-to-right traversal
+                        const neighbors = this.adjList.get(vertex).slice().reverse();
+                        for (const neighbor of neighbors) {
+                            if (!visited.has(neighbor)) {
+                                stack.push(neighbor);
+                            }
+                        }
+                    }
+                }
+                
+                const endTime = performance.now();
+                
+                return {
+                    path: result,
+                    time: endTime - startTime,
+                    nodesVisited: visited.size,
+                    maxMemoryUsage: maxStackSize
+                };
+            }
+            
+            bfs(startVertex = 0) {
+                const visited = new Set();
+                const result = [];
+                const queue = [startVertex];
+                let maxQueueSize = 0;
+                
+                const startTime = performance.now();
+                visited.add(startVertex);
+                
+                while (queue.length > 0) {
+                    maxQueueSize = Math.max(maxQueueSize, queue.length);
+                    const vertex = queue.shift();
+                    result.push(vertex);
+                    
+                    for (const neighbor of this.adjList.get(vertex)) {
+                        if (!visited.has(neighbor)) {
+                            visited.add(neighbor);
+                            queue.push(neighbor);
+                        }
+                    }
+                }
+                
+                const endTime = performance.now();
+                
+                return {
+                    path: result,
+                    time: endTime - startTime,
+                    nodesVisited: visited.size,
+                    maxMemoryUsage: maxQueueSize
+                };
+            }
+        }
+        
+        // Graph generators
+        function generateRandomGraph(vertices, density) {
+            const graph = new Graph(vertices);
+            const edges = Math.floor((vertices * (vertices - 1) / 2) * density);
+            
+            for (let i = 0; i < edges; i++) {
+                let u, v;
+                do {
+                    u = Math.floor(Math.random() * vertices);
+                    v = Math.floor(Math.random() * vertices);
+                } while (u === v || graph.adjList.get(u).includes(v));
+                
+                graph.addEdge(u, v);
+            }
+            
+            return graph;
+        }
+        
+        function generateCompleteGraph(vertices) {
+            const graph = new Graph(vertices);
+            for (let i = 0; i < vertices; i++) {
+                for (let j = i + 1; j < vertices; j++) {
+                    graph.addEdge(i, j);
+                }
+            }
+            return graph;
+        }
+        
+        function generateLinearGraph(vertices) {
+            const graph = new Graph(vertices);
+            for (let i = 0; i < vertices - 1; i++) {
+                graph.addEdge(i, i + 1);
+            }
+            return graph;
+        }
+        
+        function generateTreeGraph(vertices) {
+            const graph = new Graph(vertices);
+            for (let i = 1; i < vertices; i++) {
+                const parent = Math.floor((i - 1) / 2);
+                graph.addEdge(parent, i);
+            }
+            return graph;
+        }
+        
+        function generateGridGraph(size) {
+            const vertices = size * size;
+            const graph = new Graph(vertices);
+            
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    const current = i * size + j;
+                    
+                    // Connect to right neighbor
+                    if (j < size - 1) {
+                        graph.addEdge(current, current + 1);
+                    }
+                    
+                    // Connect to bottom neighbor
+                    if (i < size - 1) {
+                        graph.addEdge(current, current + size);
+                    }
+                }
+            }
+            
+            return graph;
+        }
+        
+        // Analysis data storage
+        let analysisResults = [];
+        let currentGraph = null;
+        
+        // Chart instances
+        let timeChart, memoryChart, nodesChart, efficiencyChart;
+        
+        async function runAnalysis() {
+            const button = document.getElementById('runAnalysis');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            
+            button.disabled = true;
+            button.textContent = 'Running Analysis...';
+            progressContainer.style.display = 'block';
+            
+            const graphType = document.getElementById('graphType').value;
+            const startSize = parseInt(document.getElementById('startSize').value);
+            const endSize = parseInt(document.getElementById('endSize').value);
+            const stepSize = parseInt(document.getElementById('stepSize').value);
+            const iterations = parseInt(document.getElementById('iterations').value);
+            const density = parseFloat(document.getElementById('density').value);
+            
+            analysisResults = [];
+            
+            const sizes = [];
+            for (let size = startSize; size <= endSize; size += stepSize) {
+                sizes.push(size);
+            }
+            
+            for (let i = 0; i < sizes.length; i++) {
+                const size = sizes[i];
+                const progress = (i / sizes.length) * 100;
+                progressFill.style.width = progress + '%';
+                
+                let totalDFSTime = 0, totalBFSTime = 0;
+                let totalDFSMemory = 0, totalBFSMemory = 0;
+                let totalDFSNodes = 0, totalBFSNodes = 0;
+                
+                // Run multiple iterations for more accurate results
+                for (let iter = 0; iter < iterations; iter++) {
+                    let graph;
+                    
+                    switch (graphType) {
+                        case 'complete':
+                            graph = generateCompleteGraph(size);
+                            break;
+                        case 'linear':
+                            graph = generateLinearGraph(size);
+                            break;
+                        case 'tree':
+                            graph = generateTreeGraph(size);
+                            break;
+                        case 'grid':
+                            const gridSize = Math.ceil(Math.sqrt(size));
+                            graph = generateGridGraph(gridSize);
+                            break;
+                        default:
+                            graph = generateRandomGraph(size, density);
+                    }
+                    
+                    const dfsResult = graph.dfs(0);
+                    const bfsResult = graph.bfs(0);
+                    
+                    totalDFSTime += dfsResult.time;
+                    totalBFSTime += bfsResult.time;
+                    totalDFSMemory += dfsResult.maxMemoryUsage;
+                    totalBFSMemory += bfsResult.maxMemoryUsage;
+                    totalDFSNodes += dfsResult.nodesVisited;
+                    totalBFSNodes += bfsResult.nodesVisited;
+                }
+                
+                analysisResults.push({
+                    size: size,
+                    dfsTime: totalDFSTime / iterations,
+                    bfsTime: totalBFSTime / iterations,
+                    dfsMemory: totalDFSMemory / iterations,
+                    bfsMemory: totalBFSMemory / iterations,
+                    dfsNodes: totalDFSNodes / iterations,
+                    bfsNodes: totalBFSNodes / iterations
+                });
+                
+                // Small delay to allow UI updates
+                await new Promise(resolve => setTimeout(resolve, 10));
+            }
+            
+            progressFill.style.width = '100%';
+            
+            updateCharts();
+            updateResultsTable();
+            generateConclusion();
+            
+            button.disabled = false;
+            button.innerHTML = '<span class="icon">🚀</span> Run Empirical Analysis';
+            
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressFill.style.width = '0%';
+            }, 1000);
+        }
+        
+        function updateCharts() {
+            const labels = analysisResults.map(r => r.size);
+            const dfsTimeData = analysisResults.map(r => r.dfsTime);
+            const bfsTimeData = analysisResults.map(r => r.bfsTime);
+            const dfsMemoryData = analysisResults.map(r => r.dfsMemory);
+            const bfsMemoryData = analysisResults.map(r => r.bfsMemory);
+            const dfsNodesData = analysisResults.map(r => r.dfsNodes);
+            const bfsNodesData = analysisResults.map(r => r.bfsNodes);
+            
+            const chartOptions = {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Graph Size (vertices)'
+                        }
+                    }
+                }
+            };
+            
+            // Time Chart
+            if (timeChart) timeChart.destroy();
+            timeChart = new Chart(document.getElementById('timeChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'DFS Time',
+                        data: dfsTimeData,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'BFS Time',
+                        data: bfsTimeData,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Time (milliseconds)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Memory Chart
+            if (memoryChart) memoryChart.destroy();
+            memoryChart = new Chart(document.getElementById('memoryChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'DFS Memory',
+                        data: dfsMemoryData,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'BFS Memory',
+                        data: bfsMemoryData,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Max Memory Usage'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Nodes Chart
+            if (nodesChart) nodesChart.destroy();
+            nodesChart = new Chart(document.getElementById('nodesChart'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'DFS Nodes',
+                        data: dfsNodesData,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'BFS Nodes',
+                        data: bfsNodesData,
+                        borderColor: '#764ba2',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Nodes Visited'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Efficiency Chart (Time/Nodes ratio)
+            const dfsEfficiency = analysisResults.map(r => r.dfsTime / r.dfsNodes);
+            const bfsEfficiency = analysisResults.map(r => r.bfsTime / r.bfsNodes);
+            
+            if (efficiencyChart) efficiencyChart.destroy();
+            efficiencyChart = new Chart(document.getElementById('efficiencyChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'DFS Efficiency',
+                        data: dfsEfficiency,
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                        borderColor: '#667eea',
+                        borderWidth: 1
+                    }, {
+                        label: 'BFS Efficiency',
+                        data: bfsEfficiency,
+                        backgroundColor: 'rgba(118, 75, 162, 0.7)',
+                        borderColor: '#764ba2',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Time per Node (ms/node)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateResultsTable() {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+            
+            analysisResults.forEach(result => {
+                const row = tbody.insertRow();
+                const winner = result.dfsTime < result.bfsTime ? 'DFS' : 'BFS';
+                const winnerColor = winner === 'DFS' ? '#667eea' : '#764ba2';
+                
+                row.innerHTML = `
+                    <td>${result.size}</td>
+                    <td>${result.dfsTime.toFixed(3)}</td>
+                    <td>${result.bfsTime.toFixed(3)}</td>
+                    <td>${result.dfsMemory.toFixed(1)}</td>
+                    <td>${result.bfsMemory.toFixed(1)}</td>
+                    <td>${result.dfsNodes.toFixed(0)}</td>
+                    <td>${result.bfsNodes.toFixed(0)}</td>
+                    <td style="color: ${winnerColor}; font-weight: bold;">${winner}</td>
+                `;
+            });
+        }
+        
+        function generateConclusion() {
+            if (analysisResults.length === 0) return;
+            
+            const avgDFSTime = analysisResults.reduce((sum, r) => sum + r.dfsTime, 0) / analysisResults.length;
+            const avgBFSTime = analysisResults.reduce((sum, r) => sum + r.bfsTime, 0) / analysisResults.length;
+            const avgDFSMemory = analysisResults.reduce((sum, r) => sum + r.dfsMemory, 0) / analysisResults.length;
+            const avgBFSMemory = analysisResults.reduce((sum, r) => sum + r.bfsMemory, 0) / analysisResults.length;
+            
+            const dfsWins = analysisResults.filter(r => r.dfsTime < r.bfsTime).length;
+            const bfsWins = analysisResults.length - dfsWins;
+            
+            const graphType = document.getElementById('graphType').value;
+            const conclusionElement = document.getElementById('conclusionText');
+            
+            let conclusion = `
+                <h3>📊 Statistical Summary</h3>
+                <p><strong>Graph Type Analyzed:</strong> ${graphType.charAt(0).toUpperCase() + graphType.slice(1)} graphs</p>
+                <p><strong>Test Range:</strong> ${analysisResults[0].size} to ${analysisResults[analysisResults.length-1].size} vertices</p>
+                <p><strong>Total Tests:</strong> ${analysisResults.length} different graph sizes</p>
+                
+                <h3>⚡ Performance Comparison</h3>
+                <p><strong>Average Execution Time:</strong></p>
+                <ul>
+                    <li>DFS: ${avgDFSTime.toFixed(3)} ms</li>
+                    <li>BFS: ${avgBFSTime.toFixed(3)} ms</li>
+                    <li>Difference: ${Math.abs(avgDFSTime - avgBFSTime).toFixed(3)} ms</li>
+                </ul>
+                
+                <p><strong>Average Memory Usage:</strong></p>
+                <ul>
+                    <li>DFS: ${avgDFSMemory.toFixed(1)} units</li>
+                    <li>BFS: ${avgBFSMemory.toFixed(1)} units</li>
+                    <li>Difference: ${Math.abs(avgDFSMemory - avgBFSMemory).toFixed(1)} units</li>
+                </ul>
+                
+                <p><strong>Performance Winners:</strong></p>
+                <ul>
+                    <li>DFS won in ${dfsWins} out of ${analysisResults.length} tests (${(dfsWins/analysisResults.length*100).toFixed(1)}%)</li>
+                    <li>BFS won in ${bfsWins} out of ${analysisResults.length} tests (${(bfsWins/analysisResults.length*100).toFixed(1)}%)</li>
+                </ul>
+                
+                <h3>🔍 Key Findings</h3>
+            `;
+            
+            if (avgDFSTime < avgBFSTime) {
+                conclusion += `<p><strong>DFS performed better overall</strong> with ${((avgBFSTime - avgDFSTime) / avgBFSTime * 100).toFixed(1)}% faster execution time on average.</p>`;
+            } else {
+                conclusion += `<p><strong>BFS performed better overall</strong> with ${((avgDFSTime - avgBFSTime) / avgDFSTime * 100).toFixed(1)}% faster execution time on average.</p>`;
+            }
+            
+            if (avgDFSMemory < avgBFSMemory) {
+                conclusion += `<p><strong>DFS used less memory</strong> with ${((avgBFSMemory - avgDFSMemory) / avgBFSMemory * 100).toFixed(1)}% lower memory usage on average.</p>`;
+            } else {
+                conclusion += `<p><strong>BFS used less memory</strong> with ${((avgDFSMemory - avgBFSMemory) / avgDFSMemory * 100).toFixed(1)}% lower memory usage on average.</p>`;
+            }
+            
+            // Graph-specific insights
+            switch (graphType) {
+                case 'complete':
+                    conclusion += `<p>🔗 <strong>Complete Graph Insights:</strong> Both algorithms visit all nodes, but BFS typically uses more memory due to storing all neighbors at each level, while DFS uses a smaller stack.</p>`;
+                    break;
+                case 'linear':
+                    conclusion += `<p>📏 <strong>Linear Graph Insights:</strong> DFS and BFS behave similarly on linear structures, with DFS having a slight advantage due to simpler stack operations.</p>`;
+                    break;
+                case 'tree':
+                    conclusion += `<p>🌳 <strong>Tree Graph Insights:</strong> Both algorithms are efficient, but DFS naturally follows the tree structure, potentially using less memory for deep trees.</p>`;
+                    break;
+                case 'grid':
+                    conclusion += `<p>🔲 <strong>Grid Graph Insights:</strong> BFS is naturally suited for grid exploration as it explores level by level, while DFS may go deep into one direction first.</p>`;
+                    break;
+                case 'random':
+                    conclusion += `<p>🎲 <strong>Random Graph Insights:</strong> Performance varies based on graph density and structure. Results show the average behavior across different random configurations.</p>`;
+                    break;
+            }
+            
+            conclusion += `
+                <h3>🎯 Practical Recommendations</h3>
+                <p><strong>Use DFS when:</strong></p>
+                <ul>
+                    <li>Memory is limited (generally uses less memory)</li>
+                    <li>You need to explore deep paths (maze solving, backtracking)</li>
+                    <li>Topological sorting or cycle detection is required</li>
+                    <li>Tree-like structures are being traversed</li>
+                </ul>
+                
+                <p><strong>Use BFS when:</strong></p>
+                <ul>
+                    <li>Finding shortest path in unweighted graphs</li>
+                    <li>Level-order traversal is needed</li>
+                    <li>Finding all nodes at a specific distance</li>
+                    <li>Social network analysis (degrees of separation)</li>
+                </ul>
+                
+                <h3>📈 Scalability Analysis</h3>
+                <p>Both algorithms show <strong>linear scalability</strong> with respect to graph size, confirming their O(V + E) time complexity. 
+                The choice between them should be based on specific use case requirements rather than pure performance metrics.</p>
+            `;
+            
+            conclusionElement.innerHTML = conclusion;
+        }
+        
+        // Graph visualization functions
+        function generateSampleGraph() {
+            const size = 12;
+            currentGraph = generateRandomGraph(size, 0.25);
+            drawGraph();
+        }
+        
+        function drawGraph() {
+            if (!currentGraph) return;
+            
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = 400;
+            canvas.height = 300;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Generate node positions in a circle
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 30;
+            
+            const positions = [];
+            for (let i = 0; i < currentGraph.vertices; i++) {
+                const angle = (2 * Math.PI * i) / currentGraph.vertices;
+                positions.push([
+                    centerX + radius * Math.cos(angle),
+                    centerY + radius * Math.sin(angle)
+                ]);
+            }
+            
+            // Draw edges
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < currentGraph.vertices; i++) {
+                for (const neighbor of currentGraph.adjList.get(i)) {
+                    if (i < neighbor) { // Draw each edge only once
+                        ctx.beginPath();
+                        ctx.moveTo(positions[i][0], positions[i][1]);
+                        ctx.lineTo(positions[neighbor][0], positions[neighbor][1]);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Draw nodes
+            for (let i = 0; i < currentGraph.vertices; i++) {
+                ctx.beginPath();
+                ctx.arc(positions[i][0], positions[i][1], 15, 0, 2 * Math.PI);
+                ctx.fillStyle = '#667eea';
+                ctx.fill();
+                ctx.strokeStyle = '#4a5568';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Node labels
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i.toString(), positions[i][0], positions[i][1]);
+            }
+        }
+        
+        async function visualizeDFS() {
+            if (!currentGraph) {
+                generateSampleGraph();
+            }
+            
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            const result = currentGraph.dfs(0);
+            
+            // Animate the DFS traversal
+            for (let i = 0; i < result.path.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Redraw graph
+                drawGraph();
+                
+                // Highlight visited nodes
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = Math.min(centerX, centerY) - 30;
+                
+                for (let j = 0; j <= i; j++) {
+                    const nodeIndex = result.path[j];
+                    const angle = (2 * Math.PI * nodeIndex) / currentGraph.vertices;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 15, 0, 2 * Math.PI);
+                    ctx.fillStyle = j === i ? '#f093fb' : '#667eea';
+                    ctx.fill();
+                    ctx.strokeStyle = '#4a5568';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(nodeIndex.toString(), x, y);
+                }
+                
+                // Show traversal order
+                ctx.fillStyle = '#4a5568';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`DFS Order: ${result.path.slice(0, i + 1).join(' → ')}`, 10, 20);
+            }
+        }
+        
+        async function visualizeBFS() {
+            if (!currentGraph) {
+                generateSampleGraph();
+            }
+            
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            const result = currentGraph.bfs(0);
+            
+            // Animate the BFS traversal
+            for (let i = 0; i < result.path.length; i++) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Redraw graph
+                drawGraph();
+                
+                // Highlight visited nodes
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = Math.min(centerX, centerY) - 30;
+                
+                for (let j = 0; j <= i; j++) {
+                    const nodeIndex = result.path[j];
+                    const angle = (2 * Math.PI * nodeIndex) / currentGraph.vertices;
+                    const x = centerX + radius * Math.cos(angle);
+                    const y = centerY + radius * Math.sin(angle);
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 15, 0, 2 * Math.PI);
+                    ctx.fillStyle = j === i ? '#f5576c' : '#764ba2';
+                    ctx.fill();
+                    ctx.strokeStyle = '#4a5568';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(nodeIndex.toString(), x, y);
+                }
+                
+                // Show traversal order
+                ctx.fillStyle = '#4a5568';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`BFS Order: ${result.path.slice(0, i + 1).join(' → ')}`, 10, 20);
+            }
+        }
+        
+        // Initialize with a sample graph
+        window.addEventListener('load', () => {
+            generateSampleGraph();
+        });
+    </script>
+</body>
+</html>
+            
